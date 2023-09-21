@@ -14,7 +14,7 @@ using RTFunctions.Functions.Managers;
 
 namespace ExampleCompanion
 {
-    [BepInPlugin("com.mecha.examplecompanion", "ExampleCompanion", "1.0.0")]
+    [BepInPlugin("com.mecha.examplecompanion", "ExampleCompanion", "1.0.1")]
     public class ExamplePlugin : BaseUnityPlugin
     {
         public static ExamplePlugin inst;
@@ -25,6 +25,7 @@ namespace ExampleCompanion
         public static Action<EditorManager> onEditorAwake = delegate (EditorManager x) { };
         public static Action<bool> onEditorToggle = delegate (bool x) { };
         public static Action<string> onSceneLoad = delegate (string x) { };
+        public static Action<GameManager> onGameAwake = delegate (GameManager x) { };
 
         public static Action onInit = delegate ()
         {
@@ -107,6 +108,10 @@ namespace ExampleCompanion
         [HarmonyPatch(typeof(SceneManager), "LoadScene", new Type[] { typeof(string) })]
         [HarmonyPostfix]
         static void LoadScenePostfix(string __0) => onSceneLoad(__0);
+
+        [HarmonyPatch(typeof(GameManager), "Awake")]
+        [HarmonyPostfix]
+        static void GameManagerAwakePostfix(GameManager __instance) => onGameAwake(__instance);
 
         public static void LogFormat(string str, params object[] v) => Debug.LogFormat("{0}{1}", className, string.Format(str, v));
     }
