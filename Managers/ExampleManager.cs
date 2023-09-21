@@ -354,7 +354,8 @@ namespace ExampleCompanion.Managers
 		float blinkRate = 5f;
 
 		bool blinkCanChange = true;
-		bool range = true;
+		bool canBlink = true;
+		int blinkChance = 45;
 
 		public bool lookAt = true;
 
@@ -366,6 +367,16 @@ namespace ExampleCompanion.Managers
 			{
 				float num = (float)Screen.width / 1920f;
 				num = 1f / num;
+
+				if (!Cursor.visible && GameObject.Find("Players/Player 1/Player"))
+				{
+					var p = GameObject.Find("Players/Player 1/Player").transform.position;
+
+					p = Camera.main.WorldToScreenPoint(p);
+
+					return p * num;
+				}
+
 				return Input.mousePosition * num;
 			}
 		}
@@ -654,10 +665,10 @@ namespace ExampleCompanion.Managers
 					float t = time % blinkRate;
 
 					if (t > blinkRate - 0.3f && t < blinkRate && blinkCanChange)
-						range = UnityEngine.Random.Range(0, 100) > 45;
+						canBlink = UnityEngine.Random.Range(0, 100) > blinkChance;
 
 
-					if (t > blinkRate - 0.3f && t < blinkRate && blink != null && range)
+					if (t > blinkRate - 0.3f && t < blinkRate && blink != null && canBlink)
 					{
 						blinkCanChange = false;
 						blink.gameObject.SetActive(true);
@@ -682,9 +693,7 @@ namespace ExampleCompanion.Managers
 					floatingParent.localPosition = new Vector3(0f, (Ease.SineInOut(floatingLevel) - 0.5f) * 2f, 0f);
 
 				if (chatterBase != null)
-                {
 					chatterBase.localPosition = new Vector3(TotalPosition.x, TotalPosition.y - 110f, 0f);
-                }
 
 				if (TotalPosition.x < 130f && TotalPosition.y > -80f && EditorManager.inst)
 				{
@@ -2473,7 +2482,7 @@ namespace ExampleCompanion.Managers
 				t += 0.1f;
 			}
 
-			list.Add(new FloatKeyframe((t + 0.05f) * time, ogMouth, Ease.Linear));
+			list.Add(new FloatKeyframe((t + 0.05f) * time, 0.5f, Ease.Linear));
 
 			var listX = new List<IKeyframe<float>>();
 			var listY = new List<IKeyframe<float>>();
