@@ -884,6 +884,13 @@ namespace ExampleCompanion.Managers
 				if (dragging || draggingLeftHand || draggingRightHand)
 					timeSinceLastInteractedOffset = Time.time;
 
+				if (mouthLower != null)
+                {
+					var m = mouthLower.localScale;
+					m.y = Mathf.Clamp(m.y, 0f, 1f);
+					mouthLower.localScale = m;
+                }
+
 				lastPos = new Vector3(parentX.localPosition.x, parentY.localPosition.y, 0f);
 			}
 			lateUpdate();
@@ -2462,7 +2469,7 @@ namespace ExampleCompanion.Managers
 			{
 				list.Add(new FloatKeyframe(t * time, ogMouth * 1.85f, Ease.SineOut));
 				t += 0.1f;
-				list.Add(new FloatKeyframe(t * time, ogMouth, Ease.SineIn));
+				list.Add(new FloatKeyframe(t * time, 0.5f, Ease.SineIn));
 				t += 0.1f;
 			}
 
