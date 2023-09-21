@@ -4,7 +4,7 @@
     <TargetFramework>net46</TargetFramework>
     <AssemblyName>ExampleCompanion</AssemblyName>
     <Description>A little friend to accompany you on your Project Arrhythmia journey...</Description>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
