@@ -203,6 +203,8 @@ namespace ExampleCompanion.Managers
 						inst.eyes.localScale = new Vector3(1f, x, 1f);
 					}),
 				};
+
+				inst.PlayOnce(animation, false);
 			}),
 
 			new Dialogue("THIS IS SO MUCH FUN! :D", BeingDragged),
@@ -457,29 +459,29 @@ namespace ExampleCompanion.Managers
 		float timeSinceLastInteractedOffset = 0f;
 		float timeSinceLastInteracted = 0f;
 
-		public void HandleChatting()
-        {
-			if (chatter == null || chatting)
+		public Action chatAction = delegate ()
+		{
+			if (inst.chatter == null || inst.chatting)
 				return;
 
-			chatting = true;
+			inst.chatting = true;
 
-			string text = chatter.text;
+			string text = inst.chatter.text;
 			string toLower = text.ToLower();
 			var words = text.Split(' ').ToList();
 			if (words[0].ToLower() == "hello")
 			{
-				Say("Hey, " + RTFunctions.FunctionsPlugin.displayName + "! How are you doing?", onComplete: delegate () { chatting = false; });
+				inst.Say("Hey, " + RTFunctions.FunctionsPlugin.displayName + "! How are you doing?", onComplete: delegate () { inst.chatting = false; });
 			}
-			else if (ModCompatibility.mods.ContainsKey("EditorManagement") && ModCompatibility.mods["EditorManagement"].methods.ContainsKey("SetConfigEntry") && (toLower.Contains("set") && (toLower.Contains("autosave") || toLower.Contains("auto save")) && (toLower.Contains("repeat") || toLower.Contains("loop") || toLower.Contains("time")) && RegexMatch(new Regex(@"to ([0-9.]+)"), text, out Match autoSaveLoopTime) && float.TryParse(autoSaveLoopTime.Groups[1].ToString(), out float loop)))
+			else if (ModCompatibility.mods.ContainsKey("EditorManagement") && ModCompatibility.mods["EditorManagement"].methods.ContainsKey("SetConfigEntry") && (toLower.Contains("set") && (toLower.Contains("autosave") || toLower.Contains("auto save")) && (toLower.Contains("repeat") || toLower.Contains("loop") || toLower.Contains("time")) && inst.RegexMatch(new Regex(@"to ([0-9.]+)"), text, out Match autoSaveLoopTime) && float.TryParse(autoSaveLoopTime.Groups[1].ToString(), out float loop)))
 			{
 				ModCompatibility.mods["EditorManagement"].Invoke("SetConfigEntry", "Autosave Loop Time", loop);
-				Say("Set Autosave loop time to " + loop + "!", onComplete: delegate () { chatting = false; });
+				inst.Say("Set Autosave loop time to " + loop + "!", onComplete: delegate () { inst.chatting = false; });
 			}
-			else if (EditorManager.inst && ModCompatibility.mods.ContainsKey("EditorManagement") && ModCompatibility.mods["EditorManagement"].methods.ContainsKey("SetConfigEntry") && (toLower.Contains("set") && (toLower.Contains("autosave") || toLower.Contains("auto save")) && toLower.Contains("limit") && RegexMatch(new Regex(@"to ([0-9]+)"), text, out Match autoSaveLimitMatch) && int.TryParse(autoSaveLimitMatch.Groups[1].ToString(), out int limit)))
+			else if (EditorManager.inst && ModCompatibility.mods.ContainsKey("EditorManagement") && ModCompatibility.mods["EditorManagement"].methods.ContainsKey("SetConfigEntry") && (toLower.Contains("set") && (toLower.Contains("autosave") || toLower.Contains("auto save")) && toLower.Contains("limit") && inst.RegexMatch(new Regex(@"to ([0-9]+)"), text, out Match autoSaveLimitMatch) && int.TryParse(autoSaveLimitMatch.Groups[1].ToString(), out int limit)))
 			{
 				ModCompatibility.mods["EditorManagement"].Invoke("SetConfigEntry", "Autosave Limit", limit);
-				Say("Set Autosave limit to " + limit + "!", onComplete: delegate () { chatting = false; });
+				inst.Say("Set Autosave limit to " + limit + "!", onComplete: delegate () { inst.chatting = false; });
 			}
 			else if (EditorManager.inst && toLower.Contains("flip") && toLower.Contains("object"))
 			{
@@ -517,14 +519,14 @@ namespace ExampleCompanion.Managers
 							new FloatKeyframe(0.2f, 360f, Ease.SineOut)
 						}, delegate (float x)
 						{
-							parentRotscale.localRotation = Quaternion.Euler(0f, 0f, x);
+							inst.parentRotscale.localRotation = Quaternion.Euler(0f, 0f, x);
 						}),
 					};
 
-					Say("Object flipped!", onComplete: delegate () { chatting = false; });
+					inst.Say("Object flipped!", onComplete: delegate () { inst.chatting = false; });
 				}
 				else
-					Say("I couldn't flip that... sorry...", onComplete: delegate () { chatting = false; });
+					inst.Say("I couldn't flip that... sorry...", onComplete: delegate () { inst.chatting = false; });
 			}
 			else if (toLower.Contains("give") && toLower.Contains("random") && toLower.Contains("number"))
 			{
@@ -532,21 +534,23 @@ namespace ExampleCompanion.Managers
 
 				LSText.CopyToClipboard(randomString);
 
-				Say("Okay, here's a random number: " + randomString + ". It has been copied to your clipboard!", onComplete: delegate () { chatting = false; });
+				inst.Say("Okay, here's a random number: " + randomString + ". It has been copied to your clipboard!", onComplete: delegate () { inst.chatting = false; });
 			}
-			else if (toLower.Contains("run") && toLower.Contains("code") && RegexMatch(new Regex(@"from: \((.*?)\)"), text, out Match coder))
+			else if (toLower.Contains("run") && toLower.Contains("code") && inst.RegexMatch(new Regex(@"from: \((.*?)\)"), text, out Match coder))
 			{
 				Debug.LogFormat("{0}Path: {1}", className, coder.Groups[1].ToString());
 				if (RTFile.FileExists(coder.Groups[1].ToString()))
-                {
-                    RTCode.Evaluate(RTFile.ReadFromFile(coder.Groups[1].ToString()));
-                    Say("Running code from: " + coder.Groups[1].ToString() + "!", onComplete: delegate () { chatting = false; });
-                }
+				{
+					RTCode.Evaluate(RTFile.ReadFromFile(coder.Groups[1].ToString()));
+					inst.Say("Running code from: " + coder.Groups[1].ToString() + "!", onComplete: delegate () { inst.chatting = false; });
+				}
 				else
-					Say("I couldn't run that code... sorry.", onComplete: delegate () { chatting = false; });
+					inst.Say("I couldn't run that code... sorry.", onComplete: delegate () { inst.chatting = false; });
 			}
-            else chatting = false;
-        }
+			else inst.chatting = false;
+		};
+
+		public void HandleChatting() => chatAction();
 
 		public bool RegexMatch(Regex regex, string text, out Match match)
         {
