@@ -67,6 +67,8 @@ namespace ExampleCompanion.Managers
 		public string BrowsPath => RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/Example Parts/example brow.png";
 		public string EarTopPath => RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/Example Parts/example ear top.png";
 
+		public string HandsPath => RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/Example Parts/example hand.png";
+
 		#endregion
 
 		#region Movement
@@ -578,6 +580,8 @@ namespace ExampleCompanion.Managers
 		public bool talking = false;
 
 		public static bool addedOnLevelLoad = false;
+
+		public bool downloadMode = false;
 
 		/// <summary>
 		/// Inits Example.
@@ -1155,17 +1159,29 @@ namespace ExampleCompanion.Managers
 				yield return StartCoroutine(RTCode.IEvaluate(RTFile.ReadFromFile("settings/ExampleHooks.cs")));
             }
 
-			yield return AlephNetworkManager.DownloadAudioClip(speakURL, RTFile.GetAudioType(speakURL), delegate (AudioClip audioClip)
+			if (downloadMode)
 			{
-				speakSound = audioClip;
-			}, delegate (string onError)
+				yield return AlephNetworkManager.DownloadAudioClip(speakURL, RTFile.GetAudioType(speakURL), delegate (AudioClip audioClip)
+				{
+					speakSound = audioClip;
+				}, delegate (string onError)
+				{
+					var p = SpeakPath;
+					StartCoroutine(AlephNetworkManager.DownloadAudioClip($"file://{p}", RTFile.GetAudioType(p), delegate (AudioClip audioClip)
+					{
+						speakSound = audioClip;
+					}));
+				});
+			}
+			else
 			{
 				var p = SpeakPath;
 				StartCoroutine(AlephNetworkManager.DownloadAudioClip($"file://{p}", RTFile.GetAudioType(p), delegate (AudioClip audioClip)
 				{
 					speakSound = audioClip;
 				}));
-			});
+			}
+
 
             #region Canvas
 
@@ -1270,20 +1286,34 @@ namespace ExampleCompanion.Managers
 				rt.anchoredPosition = new Vector2(0f, -58f);
 				rt.sizeDelta = new Vector2(28f, 42f);
 
-				yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(tailURL, delegate (Texture2D texture2D)
+				if (downloadMode)
 				{
-					image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-				}, delegate (string onError)
-				{
-					Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
-					StartCoroutine(RTSpriteManager.LoadImageSprite(TailPath, new Vector2Int(136, 217), callback: delegate (Sprite spr)
+					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(tailURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = spr;
-					}, onError: delegate (string str)
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
+
+						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{TailPath}", delegate (Texture2D texture2D)
+						{
+							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						}, delegate (string onError)
+						{
+							Debug.LogErrorFormat("{0}File does not exist.", className);
+						}));
+					}));
+				}
+				else
+				{
+					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{TailPath}", delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
 					}));
-				}));
+				}
 
 				var clickable = im.AddComponent<ExampleClickable>();
 				clickable.onClick = delegate (PointerEventData x)
@@ -1352,19 +1382,47 @@ namespace ExampleCompanion.Managers
 				rt.pivot = new Vector2(0.5f, 0.2f);
 				rt.sizeDelta = new Vector2(44f, 52f);
 
-				yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(earBottomURL, delegate (Texture2D texture2D)
+				//yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(earBottomURL, delegate (Texture2D texture2D)
+				//{
+				//	image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//}, delegate (string onError)
+				//{
+				//	StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarBottomPath}", delegate (Texture2D texture2D)
+				//	{
+				//		image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//	}, delegate (string str)
+				//	{
+
+				//	}));
+				//}));
+
+				if (downloadMode)
 				{
-					image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-				}, delegate (string onError)
+					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(earBottomURL, delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
+						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarBottomPath}", delegate (Texture2D texture2D)
+						{
+							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						}, delegate (string onError)
+						{
+							Debug.LogErrorFormat("{0}File does not exist.", className);
+						}));
+					}));
+				}
+				else
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarBottomPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-					}, delegate (string str)
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
 					{
-
+						Debug.LogErrorFormat("{0}File does not exist.", className);
 					}));
-				}));
+				}
 			}
 
 			var l_earbottomright = new GameObject("Example Ear Bottom Right");
@@ -1389,19 +1447,47 @@ namespace ExampleCompanion.Managers
 				rt.pivot = new Vector2(0.5f, 0.2f);
 				rt.sizeDelta = new Vector2(44f, 52f);
 
-				yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(earBottomURL, delegate (Texture2D texture2D)
+				//yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(earBottomURL, delegate (Texture2D texture2D)
+				//{
+				//	image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//}, delegate (string onError)
+				//{
+				//	StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarBottomPath}", delegate (Texture2D texture2D)
+				//	{
+				//		image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//	}, delegate (string str)
+				//	{
+
+				//	}));
+				//}));
+
+				if (downloadMode)
 				{
-					image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-				}, delegate (string onError)
+					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(earBottomURL, delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
+						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarBottomPath}", delegate (Texture2D texture2D)
+						{
+							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						}, delegate (string onError)
+						{
+							Debug.LogErrorFormat("{0}File does not exist.", className);
+						}));
+					}));
+				}
+				else
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarBottomPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-					}, delegate (string str)
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
 					{
-
+						Debug.LogErrorFormat("{0}File does not exist.", className);
 					}));
-				}));
+				}
 			}
 
             #endregion
@@ -1431,16 +1517,44 @@ namespace ExampleCompanion.Managers
 				//	image.sprite = x;
 				//}));
 
-				yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(headURL, delegate (Texture2D texture2D)
+				//yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(headURL, delegate (Texture2D texture2D)
+				//{
+				//	image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//}, delegate (string onError)
+				//{
+				//	StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{HeadPath}", delegate (Texture2D texture2D)
+				//	{
+				//		image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//	}));
+				//}));
+
+				if (downloadMode)
 				{
-					image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-				}, delegate (string onError)
+					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(headURL, delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
+						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{HeadPath}", delegate (Texture2D texture2D)
+						{
+							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						}, delegate (string onError)
+						{
+							Debug.LogErrorFormat("{0}File does not exist.", className);
+						}));
+					}));
+				}
+				else
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{HeadPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}File does not exist.", className);
 					}));
-				}));
+				}
 
 				var clickable = im.AddComponent<ExampleClickable>();
 				clickable.onClick = delegate (PointerEventData x)
@@ -1752,16 +1866,44 @@ namespace ExampleCompanion.Managers
 				rt.anchoredPosition = Vector2.zero;
 				rt.sizeDelta = new Vector2(74f, 34f);
 
-				yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(eyesURL, delegate (Texture2D texture2D)
+				//yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(eyesURL, delegate (Texture2D texture2D)
+				//{
+				//	image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//}, delegate (string onError)
+				//{
+				//	StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EyesPath}", delegate (Texture2D texture2D)
+				//	{
+				//		image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//	}));
+				//}));
+
+				if (downloadMode)
 				{
-					image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-				}, delegate (string onError)
+					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(eyesURL, delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
+						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EyesPath}", delegate (Texture2D texture2D)
+						{
+							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						}, delegate (string onError)
+						{
+							Debug.LogErrorFormat("{0}File does not exist.", className);
+						}));
+					}));
+				}
+				else
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EyesPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}File does not exist.", className);
 					}));
-				}));
+				}
 			}
 
 			var l_pupils = new GameObject("Example Pupils");
@@ -1783,16 +1925,44 @@ namespace ExampleCompanion.Managers
 				rt.anchoredPosition = Vector2.zero;
 				rt.sizeDelta = new Vector2(47f, 22f);
 
-				yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(pupilsURL, delegate (Texture2D texture2D)
+				//yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(pupilsURL, delegate (Texture2D texture2D)
+				//{
+				//	image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//}, delegate (string onError)
+				//{
+				//	StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{PupilsPath}", delegate (Texture2D texture2D)
+				//	{
+				//		image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//	}));
+				//}));
+
+				if (downloadMode)
 				{
-					image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-				}, delegate (string onError)
+					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(pupilsURL, delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
+						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{PupilsPath}", delegate (Texture2D texture2D)
+						{
+							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						}, delegate (string onError)
+						{
+							Debug.LogErrorFormat("{0}File does not exist.", className);
+						}));
+					}));
+				}
+				else
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{PupilsPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}File does not exist.", className);
 					}));
-				}));
+				}
 			}
 
 			var l_blink = new GameObject("Example Blink");
@@ -1814,16 +1984,44 @@ namespace ExampleCompanion.Managers
 				rt.anchoredPosition = Vector2.zero;
 				rt.sizeDelta = new Vector2(74f, 34f);
 
-				yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(blinkURL, delegate (Texture2D texture2D)
+				//yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(blinkURL, delegate (Texture2D texture2D)
+				//{
+				//	image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//}, delegate (string onError)
+				//{
+				//	StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{BlinkPath}", delegate (Texture2D texture2D)
+				//	{
+				//		image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//	}));
+				//}));
+
+				if (downloadMode)
 				{
-					image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-				}, delegate (string onError)
+					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(blinkURL, delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
+						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{BlinkPath}", delegate (Texture2D texture2D)
+						{
+							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						}, delegate (string onError)
+						{
+							Debug.LogErrorFormat("{0}File does not exist.", className);
+						}));
+					}));
+				}
+				else
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{BlinkPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}File does not exist.", className);
 					}));
-				}));
+				}
 			}
 
             #endregion
@@ -1849,16 +2047,44 @@ namespace ExampleCompanion.Managers
 				rt.anchoredPosition = new Vector2(0f, -31f);
 				rt.sizeDelta = new Vector2(60f, 31f);
 
-				yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(snoutURL, delegate (Texture2D texture2D)
+				//yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(snoutURL, delegate (Texture2D texture2D)
+				//{
+				//	image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//}, delegate (string onError)
+				//{
+				//	StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{SnoutPath}", delegate (Texture2D texture2D)
+				//	{
+				//		image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//	}));
+				//}));
+
+				if (downloadMode)
 				{
-					image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-				}, delegate (string onError)
+					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(snoutURL, delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
+						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{SnoutPath}", delegate (Texture2D texture2D)
+						{
+							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						}, delegate (string onError)
+						{
+							Debug.LogErrorFormat("{0}File does not exist.", className);
+						}));
+					}));
+				}
+				else
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{SnoutPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}File does not exist.", className);
 					}));
-				}));
+				}
 			}
 
 			var l_mouthBase = new GameObject("Example Mouth Base");
@@ -1891,16 +2117,44 @@ namespace ExampleCompanion.Managers
 				rt.pivot = new Vector2(0.5f, 1f);
 				rt.sizeDelta = new Vector2(32f, 16f);
 
-				yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(mouthURL, delegate (Texture2D texture2D)
+				//yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(mouthURL, delegate (Texture2D texture2D)
+				//{
+				//	image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//}, delegate (string onError)
+				//{
+				//	StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{MouthPath}", delegate (Texture2D texture2D)
+				//	{
+				//		image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//	}));
+				//}));
+
+				if (downloadMode)
 				{
-					image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-				}, delegate (string onError)
+					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(mouthURL, delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
+						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{MouthPath}", delegate (Texture2D texture2D)
+						{
+							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						}, delegate (string onError)
+						{
+							Debug.LogErrorFormat("{0}File does not exist.", className);
+						}));
+					}));
+				}
+				else
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{MouthPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}File does not exist.", className);
 					}));
-				}));
+				}
 			}
 
 			var l_mouthLower = new GameObject("Example Mouth Lower");
@@ -1924,16 +2178,44 @@ namespace ExampleCompanion.Managers
 				rt.pivot = new Vector2(0.5f, 1f);
 				rt.sizeDelta = new Vector2(32f, 16f);
 
-				yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(mouthURL, delegate (Texture2D texture2D)
+				//yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(mouthURL, delegate (Texture2D texture2D)
+				//{
+				//	image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//}, delegate (string onError)
+				//{
+				//	StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{MouthPath}", delegate (Texture2D texture2D)
+				//	{
+				//		image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//	}));
+				//}));
+
+				if (downloadMode)
 				{
-					image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-				}, delegate (string onError)
+					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(mouthURL, delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
+						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{MouthPath}", delegate (Texture2D texture2D)
+						{
+							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						}, delegate (string onError)
+						{
+							Debug.LogErrorFormat("{0}File does not exist.", className);
+						}));
+					}));
+				}
+				else
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{MouthPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}File does not exist.", className);
 					}));
-				}));
+				}
 			}
 
 			var l_lips = new GameObject("Example Lips");
@@ -1957,16 +2239,44 @@ namespace ExampleCompanion.Managers
 				rt.pivot = new Vector2(0.5f, 1f);
 				rt.sizeDelta = new Vector2(32f, 8f);
 
-				yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(lipsURL, delegate (Texture2D texture2D)
+				//yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(lipsURL, delegate (Texture2D texture2D)
+				//{
+				//	image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//}, delegate (string onError)
+				//{
+				//	StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{LipsPath}", delegate (Texture2D texture2D)
+				//	{
+				//		image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//	}));
+				//}));
+
+				if (downloadMode)
 				{
-					image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-				}, delegate (string onError)
+					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(lipsURL, delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
+						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{LipsPath}", delegate (Texture2D texture2D)
+						{
+							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						}, delegate (string onError)
+						{
+							Debug.LogErrorFormat("{0}File does not exist.", className);
+						}));
+					}));
+				}
+				else
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{LipsPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}File does not exist.", className);
 					}));
-				}));
+				}
 			}
 
 			var l_nose = new GameObject("Example Nose");
@@ -1988,16 +2298,44 @@ namespace ExampleCompanion.Managers
 				rt.anchoredPosition = new Vector2(0f, 0f);
 				rt.sizeDelta = new Vector2(22f, 8f);
 
-				yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(noseURL, delegate (Texture2D texture2D)
+				//yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(noseURL, delegate (Texture2D texture2D)
+				//{
+				//	image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//}, delegate (string onError)
+				//{
+				//	StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{NosePath}", delegate (Texture2D texture2D)
+				//	{
+				//		image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//	}));
+				//}));
+
+				if (downloadMode)
 				{
-					image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-				}, delegate (string onError)
+					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(noseURL, delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
+						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{NosePath}", delegate (Texture2D texture2D)
+						{
+							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						}, delegate (string onError)
+						{
+							Debug.LogErrorFormat("{0}File does not exist.", className);
+						}));
+					}));
+				}
+				else
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{NosePath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}File does not exist.", className);
 					}));
-				}));
+				}
 			}
 
             #endregion
@@ -2032,16 +2370,44 @@ namespace ExampleCompanion.Managers
 				rt.pivot = new Vector2(1.7f, 0.5f);
 				rt.sizeDelta = new Vector2(20f, 6f);
 
-				yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(browsURL, delegate (Texture2D texture2D)
+				//yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(browsURL, delegate (Texture2D texture2D)
+				//{
+				//	image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//}, delegate (string onError)
+				//{
+				//	StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{BrowsPath}", delegate (Texture2D texture2D)
+				//	{
+				//		image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//	}));
+				//}));
+
+				if (downloadMode)
 				{
-					image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-				}, delegate (string onError)
+					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(browsURL, delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
+						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{BrowsPath}", delegate (Texture2D texture2D)
+						{
+							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						}, delegate (string onError)
+						{
+							Debug.LogErrorFormat("{0}File does not exist.", className);
+						}));
+					}));
+				}
+				else
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{BrowsPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}File does not exist.", className);
 					}));
-				}));
+				}
 			}
 
 			var l_browRight = new GameObject("Example Brow Right");
@@ -2064,16 +2430,44 @@ namespace ExampleCompanion.Managers
 				rt.pivot = new Vector2(-0.7f, 0.5f);
 				rt.sizeDelta = new Vector2(20f, 6f);
 
-				yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(browsURL, delegate (Texture2D texture2D)
+				//yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(browsURL, delegate (Texture2D texture2D)
+				//{
+				//	image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//}, delegate (string onError)
+				//{
+				//	StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{BrowsPath}", delegate (Texture2D texture2D)
+				//	{
+				//		image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//	}));
+				//}));
+
+				if (downloadMode)
 				{
-					image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-				}, delegate (string onError)
+					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(browsURL, delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
+						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{BrowsPath}", delegate (Texture2D texture2D)
+						{
+							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						}, delegate (string onError)
+						{
+							Debug.LogErrorFormat("{0}File does not exist.", className);
+						}));
+					}));
+				}
+				else
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{BrowsPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}File does not exist.", className);
 					}));
-				}));
+				}
 			}
 
             #endregion
@@ -2102,16 +2496,44 @@ namespace ExampleCompanion.Managers
 				rt.pivot = new Vector2(0.5f, 0.275f);
 				rt.sizeDelta = new Vector2(44f, 80f);
 
-				yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(earTopURL, delegate (Texture2D texture2D)
+				//yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(earTopURL, delegate (Texture2D texture2D)
+				//{
+				//	image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//}, delegate (string onError)
+				//{
+				//	StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarTopPath}", delegate (Texture2D texture2D)
+				//	{
+				//		image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//	}));
+				//}));
+
+				if (downloadMode)
 				{
-					image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-				}, delegate (string onError)
+					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(earTopURL, delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
+						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarTopPath}", delegate (Texture2D texture2D)
+						{
+							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						}, delegate (string onError)
+						{
+							Debug.LogErrorFormat("{0}File does not exist.", className);
+						}));
+					}));
+				}
+				else
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarTopPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}File does not exist.", className);
 					}));
-				}));
+				}
 
 				var clickable = im.AddComponent<ExampleClickable>();
 				clickable.onClick = delegate (PointerEventData x)
@@ -2166,16 +2588,44 @@ namespace ExampleCompanion.Managers
 				rt.pivot = new Vector2(0.5f, 0.275f);
 				rt.sizeDelta = new Vector2(44f, 80f);
 
-				yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(earTopURL, delegate (Texture2D texture2D)
+				//yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(earTopURL, delegate (Texture2D texture2D)
+				//{
+				//	image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//}, delegate (string onError)
+				//{
+				//	StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarTopPath}", delegate (Texture2D texture2D)
+				//	{
+				//		image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//	}));
+				//}));
+
+				if (downloadMode)
 				{
-					image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-				}, delegate (string onError)
+					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(earTopURL, delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
+						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarTopPath}", delegate (Texture2D texture2D)
+						{
+							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						}, delegate (string onError)
+						{
+							Debug.LogErrorFormat("{0}File does not exist.", className);
+						}));
+					}));
+				}
+				else
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarTopPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}File does not exist.", className);
 					}));
-				}));
+				}
 
 				var clickable = im.AddComponent<ExampleClickable>();
 				clickable.onClick = delegate (PointerEventData x)
@@ -2241,10 +2691,38 @@ namespace ExampleCompanion.Managers
 				rt.pivot = new Vector2(0.5f, 0.5f);
 				rt.sizeDelta = new Vector2(42f, 42f);
 
-				yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(handsURL, delegate (Texture2D texture2D)
+				//yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(handsURL, delegate (Texture2D texture2D)
+				//{
+				//	image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//}));
+
+				if (downloadMode)
 				{
-					image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-				}));
+					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(handsURL, delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
+						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{HandsPath}", delegate (Texture2D texture2D)
+						{
+							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						}, delegate (string onError)
+						{
+							Debug.LogErrorFormat("{0}File does not exist.", className);
+						}));
+					}));
+				}
+				else
+				{
+					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{HandsPath}", delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}File does not exist.", className);
+					}));
+				}
 
 				var clickable = im.AddComponent<ExampleClickable>();
 				clickable.onDown = delegate (PointerEventData x)
@@ -2292,10 +2770,38 @@ namespace ExampleCompanion.Managers
 				rt.pivot = new Vector2(0.5f, 0.5f);
 				rt.sizeDelta = new Vector2(42f, 42f);
 
-				yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(handsURL, delegate (Texture2D texture2D)
+				//yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(handsURL, delegate (Texture2D texture2D)
+				//{
+				//	image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+				//}));
+
+				if (downloadMode)
 				{
-					image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f), 100f);
-				}));
+					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(handsURL, delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
+						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{HandsPath}", delegate (Texture2D texture2D)
+						{
+							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						}, delegate (string onError)
+						{
+							Debug.LogErrorFormat("{0}File does not exist.", className);
+						}));
+					}));
+				}
+				else
+				{
+					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{HandsPath}", delegate (Texture2D texture2D)
+					{
+						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+					}, delegate (string onError)
+					{
+						Debug.LogErrorFormat("{0}File does not exist.", className);
+					}));
+				}
 
 				var clickable = im.AddComponent<ExampleClickable>();
 				clickable.onDown = delegate (PointerEventData x)
@@ -2412,6 +2918,8 @@ namespace ExampleCompanion.Managers
             Say("Hello, I am Example and this is a test!");
 
 			onSpawnComplete();
+
+			Debug.Log($"{className}Spawned!");
 
 			yield break;
         }
