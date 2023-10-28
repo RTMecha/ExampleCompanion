@@ -14,7 +14,7 @@ using RTFunctions.Functions.Managers;
 
 namespace ExampleCompanion
 {
-    [BepInPlugin("com.mecha.examplecompanion", "ExampleCompanion", "1.0.1")]
+    [BepInPlugin("com.mecha.examplecompanion", "ExampleCompanion", "1.0.2")]
     public class ExamplePlugin : BaseUnityPlugin
     {
         public static ExamplePlugin inst;
