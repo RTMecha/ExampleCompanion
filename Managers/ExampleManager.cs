@@ -475,12 +475,12 @@ namespace ExampleCompanion.Managers
 			{
 				inst.Say("Hey, " + RTFunctions.FunctionsPlugin.displayName + "! How are you doing?", onComplete: delegate () { inst.chatting = false; });
 			}
-			else if (ModCompatibility.mods.ContainsKey("EditorManagement") && ModCompatibility.mods["EditorManagement"].methods.ContainsKey("SetConfigEntry") && (toLower.Contains("set") && (toLower.Contains("autosave") || toLower.Contains("auto save")) && (toLower.Contains("repeat") || toLower.Contains("loop") || toLower.Contains("time")) && inst.RegexMatch(new Regex(@"to ([0-9.]+)"), text, out Match autoSaveLoopTime) && float.TryParse(autoSaveLoopTime.Groups[1].ToString(), out float loop)))
+			else if (ModCompatibility.mods.ContainsKey("EditorManagement") && ModCompatibility.mods["EditorManagement"].Methods.ContainsKey("SetConfigEntry") && (toLower.Contains("set") && (toLower.Contains("autosave") || toLower.Contains("auto save")) && (toLower.Contains("repeat") || toLower.Contains("loop") || toLower.Contains("time")) && inst.RegexMatch(new Regex(@"to ([0-9.]+)"), text, out Match autoSaveLoopTime) && float.TryParse(autoSaveLoopTime.Groups[1].ToString(), out float loop)))
 			{
 				ModCompatibility.mods["EditorManagement"].Invoke("SetConfigEntry", "Autosave Loop Time", loop);
 				inst.Say("Set Autosave loop time to " + loop + "!", onComplete: delegate () { inst.chatting = false; });
 			}
-			else if (EditorManager.inst && ModCompatibility.mods.ContainsKey("EditorManagement") && ModCompatibility.mods["EditorManagement"].methods.ContainsKey("SetConfigEntry") && (toLower.Contains("set") && (toLower.Contains("autosave") || toLower.Contains("auto save")) && toLower.Contains("limit") && inst.RegexMatch(new Regex(@"to ([0-9]+)"), text, out Match autoSaveLimitMatch) && int.TryParse(autoSaveLimitMatch.Groups[1].ToString(), out int limit)))
+			else if (EditorManager.inst && ModCompatibility.mods.ContainsKey("EditorManagement") && ModCompatibility.mods["EditorManagement"].Methods.ContainsKey("SetConfigEntry") && (toLower.Contains("set") && (toLower.Contains("autosave") || toLower.Contains("auto save")) && toLower.Contains("limit") && inst.RegexMatch(new Regex(@"to ([0-9]+)"), text, out Match autoSaveLimitMatch) && int.TryParse(autoSaveLimitMatch.Groups[1].ToString(), out int limit)))
 			{
 				ModCompatibility.mods["EditorManagement"].Invoke("SetConfigEntry", "Autosave Limit", limit);
 				inst.Say("Set Autosave limit to " + limit + "!", onComplete: delegate () { inst.chatting = false; });
@@ -631,8 +631,8 @@ namespace ExampleCompanion.Managers
 			{
 				var mod = new ModCompatibility.Mod(this, GetType());
 
-				mod.methods.Add("Say", GetType().GetMethod("Say"));
-				mod.methods.Add("Move", GetType().GetMethod("Move"));
+				mod.Methods.Add("Say", (Action<string, List<IKeyframe<float>>, List<IKeyframe<float>>, float, float, float, bool, Action>)Say);
+				mod.Methods.Add("Move", (Action< List<IKeyframe<float>>, List<IKeyframe<float>>, bool, Action>)Move);
 
 				if (ModCompatibility.mods["ExampleCompanion"].components.ContainsKey("ExampleManager"))
 					ModCompatibility.mods["ExampleCompanion"].components["ExampleManager"] = mod;
@@ -1290,14 +1290,14 @@ namespace ExampleCompanion.Managers
 				{
 					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(tailURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
 
 						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{TailPath}", delegate (Texture2D texture2D)
 						{
-							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+							image.sprite = SpriteManager.CreateSprite(texture2D);
 						}, delegate (string onError)
 						{
 							Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -1308,7 +1308,7 @@ namespace ExampleCompanion.Managers
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{TailPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -1400,13 +1400,13 @@ namespace ExampleCompanion.Managers
 				{
 					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(earBottomURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
 						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarBottomPath}", delegate (Texture2D texture2D)
 						{
-							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+							image.sprite = SpriteManager.CreateSprite(texture2D);
 						}, delegate (string onError)
 						{
 							Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -1417,7 +1417,7 @@ namespace ExampleCompanion.Managers
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarBottomPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -1465,13 +1465,13 @@ namespace ExampleCompanion.Managers
 				{
 					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(earBottomURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
 						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarBottomPath}", delegate (Texture2D texture2D)
 						{
-							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+							image.sprite = SpriteManager.CreateSprite(texture2D);
 						}, delegate (string onError)
 						{
 							Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -1482,7 +1482,7 @@ namespace ExampleCompanion.Managers
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarBottomPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -1504,7 +1504,7 @@ namespace ExampleCompanion.Managers
 
 				rt.anchoredPosition = Vector2.zero;
 
-				//StartCoroutine(RTSpriteManager.LoadImageSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/Example Parts/example head.png", new Vector2Int(540, 540), callback: delegate (Sprite spr)
+				//StartCoroutine(SpriteManager.LoadImageSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/Example Parts/example head.png", new Vector2Int(540, 540), callback: delegate (Sprite spr)
 				//{
 				//	image.sprite = spr;
 				//}, onError: delegate (string onError)
@@ -1512,7 +1512,7 @@ namespace ExampleCompanion.Managers
 
 				//}));
 
-				//yield return StartCoroutine(RTSpriteManager.DownloadSprite("https://media.discordapp.net/attachments/811214540141363201/1151188682540323016/example_head.png", new Vector2Int(540, 540), callback: delegate (Sprite x)
+				//yield return StartCoroutine(SpriteManager.DownloadSprite("https://media.discordapp.net/attachments/811214540141363201/1151188682540323016/example_head.png", new Vector2Int(540, 540), callback: delegate (Sprite x)
 				//{
 				//	image.sprite = x;
 				//}));
@@ -1532,13 +1532,13 @@ namespace ExampleCompanion.Managers
 				{
 					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(headURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
 						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{HeadPath}", delegate (Texture2D texture2D)
 						{
-							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+							image.sprite = SpriteManager.CreateSprite(texture2D);
 						}, delegate (string onError)
 						{
 							Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -1549,7 +1549,7 @@ namespace ExampleCompanion.Managers
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{HeadPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -1881,13 +1881,13 @@ namespace ExampleCompanion.Managers
 				{
 					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(eyesURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
 						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EyesPath}", delegate (Texture2D texture2D)
 						{
-							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+							image.sprite = SpriteManager.CreateSprite(texture2D);
 						}, delegate (string onError)
 						{
 							Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -1898,7 +1898,7 @@ namespace ExampleCompanion.Managers
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EyesPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -1940,13 +1940,13 @@ namespace ExampleCompanion.Managers
 				{
 					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(pupilsURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
 						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{PupilsPath}", delegate (Texture2D texture2D)
 						{
-							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+							image.sprite = SpriteManager.CreateSprite(texture2D);
 						}, delegate (string onError)
 						{
 							Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -1957,7 +1957,7 @@ namespace ExampleCompanion.Managers
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{PupilsPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -1999,13 +1999,13 @@ namespace ExampleCompanion.Managers
 				{
 					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(blinkURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
 						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{BlinkPath}", delegate (Texture2D texture2D)
 						{
-							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+							image.sprite = SpriteManager.CreateSprite(texture2D);
 						}, delegate (string onError)
 						{
 							Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2016,7 +2016,7 @@ namespace ExampleCompanion.Managers
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{BlinkPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2062,13 +2062,13 @@ namespace ExampleCompanion.Managers
 				{
 					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(snoutURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
 						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{SnoutPath}", delegate (Texture2D texture2D)
 						{
-							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+							image.sprite = SpriteManager.CreateSprite(texture2D);
 						}, delegate (string onError)
 						{
 							Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2079,7 +2079,7 @@ namespace ExampleCompanion.Managers
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{SnoutPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2132,13 +2132,13 @@ namespace ExampleCompanion.Managers
 				{
 					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(mouthURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
 						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{MouthPath}", delegate (Texture2D texture2D)
 						{
-							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+							image.sprite = SpriteManager.CreateSprite(texture2D);
 						}, delegate (string onError)
 						{
 							Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2149,7 +2149,7 @@ namespace ExampleCompanion.Managers
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{MouthPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2193,13 +2193,13 @@ namespace ExampleCompanion.Managers
 				{
 					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(mouthURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
 						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{MouthPath}", delegate (Texture2D texture2D)
 						{
-							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+							image.sprite = SpriteManager.CreateSprite(texture2D);
 						}, delegate (string onError)
 						{
 							Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2210,7 +2210,7 @@ namespace ExampleCompanion.Managers
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{MouthPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2254,13 +2254,13 @@ namespace ExampleCompanion.Managers
 				{
 					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(lipsURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
 						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{LipsPath}", delegate (Texture2D texture2D)
 						{
-							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+							image.sprite = SpriteManager.CreateSprite(texture2D);
 						}, delegate (string onError)
 						{
 							Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2271,7 +2271,7 @@ namespace ExampleCompanion.Managers
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{LipsPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2313,13 +2313,13 @@ namespace ExampleCompanion.Managers
 				{
 					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(noseURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
 						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{NosePath}", delegate (Texture2D texture2D)
 						{
-							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+							image.sprite = SpriteManager.CreateSprite(texture2D);
 						}, delegate (string onError)
 						{
 							Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2330,7 +2330,7 @@ namespace ExampleCompanion.Managers
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{NosePath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2385,13 +2385,13 @@ namespace ExampleCompanion.Managers
 				{
 					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(browsURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
 						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{BrowsPath}", delegate (Texture2D texture2D)
 						{
-							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+							image.sprite = SpriteManager.CreateSprite(texture2D);
 						}, delegate (string onError)
 						{
 							Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2402,7 +2402,7 @@ namespace ExampleCompanion.Managers
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{BrowsPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2445,13 +2445,13 @@ namespace ExampleCompanion.Managers
 				{
 					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(browsURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
 						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{BrowsPath}", delegate (Texture2D texture2D)
 						{
-							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+							image.sprite = SpriteManager.CreateSprite(texture2D);
 						}, delegate (string onError)
 						{
 							Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2462,7 +2462,7 @@ namespace ExampleCompanion.Managers
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{BrowsPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2511,13 +2511,13 @@ namespace ExampleCompanion.Managers
 				{
 					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(earTopURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
 						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarTopPath}", delegate (Texture2D texture2D)
 						{
-							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+							image.sprite = SpriteManager.CreateSprite(texture2D);
 						}, delegate (string onError)
 						{
 							Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2528,7 +2528,7 @@ namespace ExampleCompanion.Managers
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarTopPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2603,13 +2603,13 @@ namespace ExampleCompanion.Managers
 				{
 					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(earTopURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
 						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarTopPath}", delegate (Texture2D texture2D)
 						{
-							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+							image.sprite = SpriteManager.CreateSprite(texture2D);
 						}, delegate (string onError)
 						{
 							Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2620,7 +2620,7 @@ namespace ExampleCompanion.Managers
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{EarTopPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2700,13 +2700,13 @@ namespace ExampleCompanion.Managers
 				{
 					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(handsURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
 						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{HandsPath}", delegate (Texture2D texture2D)
 						{
-							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+							image.sprite = SpriteManager.CreateSprite(texture2D);
 						}, delegate (string onError)
 						{
 							Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2717,7 +2717,7 @@ namespace ExampleCompanion.Managers
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{HandsPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2779,13 +2779,13 @@ namespace ExampleCompanion.Managers
 				{
 					yield return StartCoroutine(AlephNetworkManager.DownloadImageTexture(handsURL, delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}Had http error {1} so trying to get offline file.", className, onError);
 						StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{HandsPath}", delegate (Texture2D texture2D)
 						{
-							image.sprite = RTSpriteManager.CreateSprite(texture2D);
+							image.sprite = SpriteManager.CreateSprite(texture2D);
 						}, delegate (string onError)
 						{
 							Debug.LogErrorFormat("{0}File does not exist.", className);
@@ -2796,7 +2796,7 @@ namespace ExampleCompanion.Managers
 				{
 					StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{HandsPath}", delegate (Texture2D texture2D)
 					{
-						image.sprite = RTSpriteManager.CreateSprite(texture2D);
+						image.sprite = SpriteManager.CreateSprite(texture2D);
 					}, delegate (string onError)
 					{
 						Debug.LogErrorFormat("{0}File does not exist.", className);
