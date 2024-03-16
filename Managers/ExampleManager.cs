@@ -331,8 +331,7 @@ namespace ExampleCompanion.Managers
 
 			public bool CanSay => dialogueFunction != null && dialogueFunction.Invoke() && canSay;
 
-			public void Action()
-			{ if (action != null) action(); }
+			public void Action() => action?.Invoke();
 
 			public string[] dialogues;
 			public string text;
@@ -369,19 +368,16 @@ namespace ExampleCompanion.Managers
 		{
 			get
 			{
-				float num = (float)Screen.width / 1920f;
-				num = 1f / num;
-
 				if (!Cursor.visible && GameObject.Find("Players/Player 1/Player"))
 				{
 					var p = GameObject.Find("Players/Player 1/Player").transform.position;
 
 					p = Camera.main.WorldToScreenPoint(p);
 
-					return p * num;
+					return p /* * RTHelpers.screenScaleInverse*/;
 				}
 
-				return Input.mousePosition * num;
+				return Input.mousePosition /* * RTHelpers.screenScaleInverse*/;
 			}
 		}
 
@@ -471,9 +467,17 @@ namespace ExampleCompanion.Managers
 			string text = inst.chatter.text;
 			string toLower = text.ToLower();
 			var words = text.Split(' ').ToList();
-			if (words[0].ToLower() == "hello")
+			if (words[0].ToLower() == "hello" || words[0].ToLower() == "hi" || words[0].ToLower() == "hey")
 			{
-				inst.Say("Hey, " + RTFunctions.FunctionsPlugin.displayName + "! How are you doing?", onComplete: delegate () { inst.chatting = false; });
+				string[] randomGreeting = new string[]
+				{
+					$"Hey, {RTFunctions.FunctionsPlugin.displayName}! How are you doing?",
+					$"Hello {RTFunctions.FunctionsPlugin.displayName}!",
+					$"What's up, {RTFunctions.FunctionsPlugin.displayName}?",
+					$"{RTFunctions.FunctionsPlugin.displayName}! What are you up to today?",
+				};
+
+				inst.Say(randomGreeting[UnityEngine.Random.Range(0, randomGreeting.Length)], onComplete: delegate () { inst.chatting = false; });
 			}
 			else if (ModCompatibility.mods.ContainsKey("EditorManagement") && ModCompatibility.mods["EditorManagement"].Methods.ContainsKey("SetConfigEntry") && (toLower.Contains("set") && (toLower.Contains("autosave") || toLower.Contains("auto save")) && (toLower.Contains("repeat") || toLower.Contains("loop") || toLower.Contains("time")) && inst.RegexMatch(new Regex(@"to ([0-9.]+)"), text, out Match autoSaveLoopTime) && float.TryParse(autoSaveLoopTime.Groups[1].ToString(), out float loop)))
 			{
@@ -488,24 +492,24 @@ namespace ExampleCompanion.Managers
 			else if (EditorManager.inst && toLower.Contains("flip") && toLower.Contains("object"))
 			{
 				bool hasFlipped = false;
-				foreach (var objectSelection in ObjEditor.inst.selectedObjects)
-				{
-					if (objectSelection.IsObject() && objectSelection.GetObjectData() != null)
-					{
-						var beatmapObject = objectSelection.GetObjectData();
-						beatmapObject.name = RTHelpers.Flip(beatmapObject.name);
-						for (int i = 0; i < 3; i++)
-						{
-							foreach (var kf in beatmapObject.events[i])
-							{
-								kf.eventValues[0] = -kf.eventValues[0];
-							}
-						}
-						ObjEditor.inst.RenderTimelineObject(objectSelection);
-						ObjectManager.inst.updateObjects(objectSelection);
-						hasFlipped = true;
-					}
-				}
+				//foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+				//{
+				//	if (objectSelection.IsObject() && objectSelection.GetObjectData() != null)
+				//	{
+				//		var beatmapObject = objectSelection.GetObjectData();
+				//		beatmapObject.name = RTHelpers.Flip(beatmapObject.name);
+				//		for (int i = 0; i < 3; i++)
+				//		{
+				//			foreach (var kf in beatmapObject.events[i])
+				//			{
+				//				kf.eventValues[0] = -kf.eventValues[0];
+				//			}
+				//		}
+				//		ObjEditor.inst.RenderTimelineObject(objectSelection);
+				//		ObjectManager.inst.updateObjects(objectSelection);
+				//		hasFlipped = true;
+				//	}
+				//}
 
 				if (ObjEditor.inst.selectedObjects.Count == 1 && ObjEditor.inst.currentObjectSelection.IsObject())
 					ModCompatibility.mods["EditorManagement"].Invoke("RefreshObjectGUI", new object[] { });
@@ -524,6 +528,19 @@ namespace ExampleCompanion.Managers
 							inst.parentRotscale.localRotation = Quaternion.Euler(0f, 0f, x);
 						}),
 					};
+
+					animation.onComplete = delegate ()
+					{
+						inst.animations.Remove(animation);
+
+						animation = null;
+					};
+
+					inst.animations.Add(animation);
+
+					animation.ResetTime();
+
+					animation.Play();
 
 					inst.Say("Object flipped!", onComplete: delegate () { inst.chatting = false; });
 				}
@@ -703,7 +720,7 @@ namespace ExampleCompanion.Managers
 				if (chatterBase != null)
 					chatterBase.localPosition = new Vector3(TotalPosition.x, TotalPosition.y - 110f, 0f);
 
-				if (TotalPosition.x < 130f && TotalPosition.y > -80f && EditorManager.inst)
+				if (TotalPosition.x < 130f && TotalPosition.y > -80f && EditorManager.inst && !EditorManager.inst.isEditing)
 				{
 					if (previewSayCanChange)
 					{
@@ -732,7 +749,7 @@ namespace ExampleCompanion.Managers
 					baseCanvas.SetActive(ExamplePlugin.EnabledInEditor.Value);
 				else if (GameManager.inst)
 					baseCanvas.SetActive(ExamplePlugin.EnabledInArcade.Value);
-				else if (ArcadeManager.inst.ic && ArcadeManager.inst.ic.gameObject.scene.name != "Editor" && ArcadeManager.inst.ic.gameObject.scene.name != "Game")
+				else if (ArcadeManager.inst.ic)
 					baseCanvas.SetActive(ExamplePlugin.EnabledInMenus.Value);
 
 				canvas.scaleFactor = RTHelpers.screenScale;
@@ -815,7 +832,7 @@ namespace ExampleCompanion.Managers
 
 				if (dragging)
 				{
-					Vector3 vector = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0f);
+					Vector3 vector = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0f) * RTHelpers.screenScaleInverse;
 
 					float p = Time.deltaTime * 60f;
 					float po = 1f - Mathf.Pow(1f - Mathf.Clamp(dragDelay, 0.001f, 1f), p);
@@ -964,9 +981,9 @@ namespace ExampleCompanion.Managers
 					new Animation.AnimationObject<Vector2>(new List<IKeyframe<Vector2>>
 					{
 						new Vector2Keyframe(0f, new Vector2(1f, 1f), Ease.Linear),
-						new Vector2Keyframe(1.2f, new Vector2(0.8f, 1.2f), Ease.SineInOut),
-						new Vector2Keyframe(1.5f, new Vector2(1.05f, 0.95f), Ease.SineInOut),
-						new Vector2Keyframe(2f, new Vector2(1f, 1f), Ease.SineInOut),
+						new Vector2Keyframe(0.5f, new Vector2(0.8f, 1.2f), Ease.SineInOut),
+						new Vector2Keyframe(0.8f, new Vector2(1.05f, 0.95f), Ease.SineInOut),
+						new Vector2Keyframe(1.1f, new Vector2(1f, 1f), Ease.SineInOut),
 					}, delegate (Vector2 x)
 					{
 						if (parentY != null)
@@ -978,8 +995,8 @@ namespace ExampleCompanion.Managers
 				{
 					new Animation.AnimationObject<Vector3>(new List<IKeyframe<Vector3>>
 					{
-						new Vector3Keyframe(0f, Vector3.zero, Ease.Linear),
-						new Vector3Keyframe(2f, new Vector3(50f, 0f, 0f), Ease.SineOut),
+						new Vector3Keyframe(0f, new Vector3(200f, 0f), Ease.Linear),
+						new Vector3Keyframe(2f, new Vector3(750f, 0f, 0f), Ease.SineOut),
 					}, delegate (Vector3 x)
 					{
 						if (parentX != null)
@@ -988,8 +1005,8 @@ namespace ExampleCompanion.Managers
 					new Animation.AnimationObject<Vector3>(new List<IKeyframe<Vector3>>
 					{
 						new Vector3Keyframe(0f, new Vector3(0f, -700f, 0f), Ease.Linear),
-						new Vector3Keyframe(1.6f, new Vector3(0f, 10f, 0f), Ease.SineOut),
-						new Vector3Keyframe(2f, new Vector3(0f, 0f, 0f), Ease.SineIn),
+						new Vector3Keyframe(1f, new Vector3(0f, -290f, 0f), Ease.SineOut),
+						new Vector3Keyframe(2f, new Vector3(0f, -410f, 0f), Ease.SineInOut),
 					}, delegate (Vector3 x)
 					{
 						if (parentY != null)
@@ -998,8 +1015,8 @@ namespace ExampleCompanion.Managers
 					new Animation.AnimationObject<Vector3>(new List<IKeyframe<Vector3>>
 					{
 						new Vector3Keyframe(0f, new Vector3(0f, 1, 0f), Ease.Linear),
-						new Vector3Keyframe(0.8f, new Vector3(0f, -1f, 0f), Ease.SineOut),
-						new Vector3Keyframe(1.2f, new Vector3(0f, 0f, 0f), Ease.SineOut),
+						new Vector3Keyframe(0.4f, new Vector3(0f, -1f, 0f), Ease.SineOut),
+						new Vector3Keyframe(0.8f, new Vector3(0f, 0f, 0f), Ease.SineOut),
 					}, delegate (Vector3 x)
 					{
 						if (pupils != null)
@@ -1148,7 +1165,7 @@ namespace ExampleCompanion.Managers
 			yield break;
 		}
 
-		public IEnumerator headEnumerator;
+		public static IEnumerator headEnumerator;
 
 		IEnumerator SpawnExample()
 		{
@@ -1581,7 +1598,7 @@ namespace ExampleCompanion.Managers
 
 					StopAnimations(x => x.name == "End Drag Example" || x.name == "Drag Example");
 
-					startMousePos = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0f);
+					startMousePos = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0f) * RTHelpers.screenScaleInverse;
 					startDragPos = new Vector2(TotalPosition.x, TotalPosition.y);
 					dragPos = new Vector3(TotalPosition.x, TotalPosition.y);
 					dragging = true;
@@ -2909,7 +2926,7 @@ namespace ExampleCompanion.Managers
 			talking = true;
             Play("Wave", onComplete: delegate ()
             {
-                ResetPositions(2f, onComplete: delegate ()
+                ResetPositions(1.6f, onComplete: delegate ()
                 {
                     Say("What would you like me to do?", onComplete: delegate () { talking = false; });
                 });
@@ -3282,7 +3299,7 @@ namespace ExampleCompanion.Managers
 				new Animation.AnimationObject<Vector3>(new List<IKeyframe<Vector3>>
 				{
 					new Vector3Keyframe(0f, parentX.localPosition, Ease.Linear),
-					new Vector3Keyframe(speed, Vector3.zero, Ease.SineInOut)
+					new Vector3Keyframe(speed, new Vector3(700f, 0f), Ease.SineInOut)
 				}, delegate (Vector3 x)
 				{
 					parentX.localPosition = x;
@@ -3290,7 +3307,7 @@ namespace ExampleCompanion.Managers
 				new Animation.AnimationObject<Vector3>(new List<IKeyframe<Vector3>>
 				{
 					new Vector3Keyframe(0f, parentY.localPosition, Ease.Linear),
-					new Vector3Keyframe(speed, Vector3.zero, Ease.SineInOut)
+					new Vector3Keyframe(speed, new Vector3(0f, -380f), Ease.SineInOut)
 				}, delegate (Vector3 x)
 				{
 					parentY.localPosition = x;
@@ -3300,8 +3317,7 @@ namespace ExampleCompanion.Managers
 			animation.onComplete = delegate ()
 			{
 				animations.Remove(animation);
-				if (onComplete != null)
-					onComplete();
+				onComplete?.Invoke();
 			};
 
 			animations.Add(animation);
