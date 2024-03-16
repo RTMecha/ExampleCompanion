@@ -1,3 +1,6 @@
+1.0.5 > [Mar 16, 2024]
+- Fixed an issue where Example wouldn't track the mouse properly at resolutions not 1080p.
+- Added some new dialogs to Example for when you say "hello", "hi" or "hey" to him via the chat box. (Chat box can be accessed via pressing G while dragging Example)
 1.0.4 > [Jan 22, 2024]
 - Updated to new systems.
 1.0.2 > [Oct 28, 2023]
