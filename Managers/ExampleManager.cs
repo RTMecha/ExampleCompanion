@@ -21,6 +21,8 @@ using RTFunctions.Functions.Animation;
 using RTFunctions.Functions.Animation.Keyframe;
 
 using UnityAnimation = UnityEngine.Animation;
+using RTFunctions.Functions.Data;
+using RTFunctions.Functions.Optimization;
 
 namespace ExampleCompanion.Managers
 {
@@ -489,30 +491,36 @@ namespace ExampleCompanion.Managers
 				ModCompatibility.mods["EditorManagement"].Invoke("SetConfigEntry", "Autosave Limit", limit);
 				inst.Say("Set Autosave limit to " + limit + "!", onComplete: delegate () { inst.chatting = false; });
 			}
-			else if (EditorManager.inst && toLower.Contains("flip") && toLower.Contains("object"))
+			else if (EditorManager.inst && toLower.Contains("flip") && toLower.Contains("object") && ModCompatibility.sharedFunctions.ContainsKey("SelectedObjects") && ModCompatibility.sharedFunctions["SelectedObjects"] is List<TimelineObject> timelineObjects)
 			{
 				bool hasFlipped = false;
-				//foreach (var objectSelection in ObjEditor.inst.selectedObjects)
-				//{
-				//	if (objectSelection.IsObject() && objectSelection.GetObjectData() != null)
-				//	{
-				//		var beatmapObject = objectSelection.GetObjectData();
-				//		beatmapObject.name = RTHelpers.Flip(beatmapObject.name);
-				//		for (int i = 0; i < 3; i++)
-				//		{
-				//			foreach (var kf in beatmapObject.events[i])
-				//			{
-				//				kf.eventValues[0] = -kf.eventValues[0];
-				//			}
-				//		}
-				//		ObjEditor.inst.RenderTimelineObject(objectSelection);
-				//		ObjectManager.inst.updateObjects(objectSelection);
-				//		hasFlipped = true;
-				//	}
-				//}
+				foreach (var timelineObject in timelineObjects)
+                {
+                    if (timelineObject.IsBeatmapObject)
+                    {
+                        var beatmapObject = timelineObject.GetData<BeatmapObject>();
+                        beatmapObject.name = RTHelpers.Flip(beatmapObject.name);
 
-				if (ObjEditor.inst.selectedObjects.Count == 1 && ObjEditor.inst.currentObjectSelection.IsObject())
-					ModCompatibility.mods["EditorManagement"].Invoke("RefreshObjectGUI", new object[] { });
+                        for (int i = 0; i < 3; i++)
+                        {
+                            foreach (var kf in beatmapObject.events[i])
+                            {
+                                kf.eventValues[0] = -kf.eventValues[0];
+                            }
+                        }
+
+                        if (ModCompatibility.mods["EditorManagement"].Methods.ContainsKey("RenderTimelineObjectVoid"))
+                        {
+                            ModCompatibility.mods["EditorManagement"].Methods["RenderTimelineObjectVoid"]?.DynamicInvoke(timelineObject);
+                        }
+
+						Updater.UpdateProcessor(beatmapObject, "Keyframes");
+						hasFlipped = true;
+					}
+				}
+
+                if (timelineObjects.Count == 1 && timelineObjects[0].IsBeatmapObject)
+					ModCompatibility.mods["EditorManagement"].Invoke("RefreshObjectGUI", new object[] { timelineObjects[0] });
 
 				if (hasFlipped)
 				{
